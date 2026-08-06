@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client"; // adjust if starter uses different path
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type Habit = {
   id: string;
@@ -23,58 +24,63 @@ export default function HabitsPage() {
   const [name, setName] = useState("");
   const [targetPerDay, setTargetPerDay] = useState(1);
 
-    useEffect(() => {
+  useEffect(() => {
     const supabase = createClient();
 
     async function loadHabits() {
-        setLoading(true);
-        const { data, error } = await supabase
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
         .from("habits")
         .select("*")
         .eq("is_archived", false)
         .order("created_at", { ascending: true });
 
-        if (error) setError(error.message);
-        else setHabits(data as Habit[]);
-        setLoading(false);
+      if (error) {
+        setError(error.message);
+      } else {
+        setHabits(data as Habit[]);
+      }
+
+      setLoading(false);
     }
 
     loadHabits();
-    }, []);
+  }, []);
 
-    async function handleAddHabit(e: React.FormEvent) {
+  async function handleAddHabit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const supabase = createClient();
 
-    // get current user (from Supabase auth)
     const { data: userRes, error: userError } = await supabase.auth.getUser();
     if (userError || !userRes?.user) {
-        setError("Not logged in or user not found");
-        return;
+      setError("Not logged in or user not found");
+      return;
     }
 
     const user = userRes.user;
 
     const { data, error } = await supabase
-        .from("habits")
-        .insert({
+      .from("habits")
+      .insert({
         user_id: user.id,
         name,
         target_per_day: targetPerDay,
-        })
-        .select("*")
-        .single();
+      })
+      .select("*")
+      .single();
 
     if (error) {
-        setError(error.message);
-        return;
+      setError(error.message);
+      return;
     }
 
     setHabits((prev) => [...prev, data as Habit]);
     setName("");
     setTargetPerDay(1);
-    }
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -118,16 +124,24 @@ export default function HabitsPage() {
 
       <section className="space-y-2">
         {loading && <p>Loading habits...</p>}
+
         {!loading && habits.length === 0 && (
-          <p className="text-sm text-gray-400">No habits yet. Add one above.</p>
+          <p className="text-sm text-gray-400">
+            No habits yet. Add one above.
+          </p>
         )}
+
         {habits.map((habit) => (
           <div
             key={habit.id}
             className="border rounded px-4 py-3 flex items-center justify-between"
           >
             <div>
-              <div className="font-medium">{habit.name}</div>
+              <div className="font-medium">
+                <Link href={`/habits/${habit.id}/calendar`}>
+                  {habit.name}
+                </Link>
+              </div>
               <div className="text-xs text-gray-400">
                 Target: {habit.target_per_day} / day
               </div>
