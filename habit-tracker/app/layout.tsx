@@ -1,14 +1,11 @@
 // app/layout.tsx
+import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-
-import "./globals.css";
-import { Sidebar } from "./Sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Sidebar } from "./Sidebar";
 
-const inter = Inter({
-  subsets: ["latin"],
-});
+const geistSans = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Habit Tracker",
@@ -22,16 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+      <body className={`${geistSans.className} antialiased`}>
+        <ThemeProvider>
           <Sidebar />
-
-          <main className="min-h-screen ml-52">
+          <main className="ml-52">
             {children}
           </main>
         </ThemeProvider>
