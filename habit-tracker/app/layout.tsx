@@ -1,23 +1,19 @@
+// app/layout.tsx
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
+import { Inter } from "next/font/google";
+
 import "./globals.css";
+import { Sidebar } from "./Sidebar";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
-export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
-};
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
+const inter = Inter({
   subsets: ["latin"],
 });
+
+export const metadata: Metadata = {
+  title: "Habit Tracker",
+  description: "Track habits, streaks, and analytics",
+};
 
 export default function RootLayout({
   children,
@@ -26,14 +22,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <Sidebar />
+
+          <main className="min-h-screen ml-52">
+            {children}
+          </main>
         </ThemeProvider>
       </body>
     </html>
