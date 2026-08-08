@@ -48,8 +48,7 @@ export function LoginForm({
       }
 
       // Refresh the server-side auth state, then navigate to the app.
-      router.refresh();
-      router.replace("/dashboard");
+      window.location.replace("/dashboard"); 
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Unable to log in";
