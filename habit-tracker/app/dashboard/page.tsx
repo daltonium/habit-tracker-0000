@@ -135,9 +135,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Today</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">Today</h1>
         <p className="text-sm text-gray-400">{today}</p>
         {summary.total > 0 && (
           <p className="text-sm text-gray-300">
@@ -146,9 +146,7 @@ export default function DashboardPage() {
         )}
       </header>
 
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
       {loading && (
         <p className="text-sm text-gray-400">Loading habits…</p>
@@ -179,11 +177,11 @@ export default function DashboardPage() {
           return (
             <div
               key={habit.id}
-              className="flex items-center justify-between border rounded px-4 py-3 bg-black/40"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border rounded px-4 py-3 bg-black/40"
             >
-              <div>
+              <div className="min-w-0">
                 <div
-                  className={`font-medium ${
+                  className={`font-medium truncate ${
                     isDone ? "line-through text-gray-300" : ""
                   }`}
                 >
@@ -196,17 +194,13 @@ export default function DashboardPage() {
               <button
                 onClick={() => toggleCompletion(habit.id, isDone)}
                 disabled={isSaving}
-                className={`px-3 py-1 rounded text-sm min-w-[84px] ${
+                className={`self-start sm:self-auto px-3 py-1 rounded text-sm min-w-[84px] ${
                   isDone
                     ? "bg-[#F43B47] text-white"
                     : "bg-gray-700 text-gray-100"
                 } ${isSaving ? "opacity-70 cursor-not-allowed" : ""}`}
               >
-                {isSaving
-                  ? "Saving…"
-                  : isDone
-                  ? "Done"
-                  : "Mark done"}
+                {isSaving ? "Saving…" : isDone ? "Done" : "Mark done"}
               </button>
             </div>
           );

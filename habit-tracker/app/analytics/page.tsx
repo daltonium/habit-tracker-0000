@@ -1,4 +1,3 @@
-// app/analytics/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,7 +11,7 @@ type HabitRow = {
 
 type CompletionRow = {
   habit_id: string;
-  completed_date: string; // YYYY-MM-DD
+  completed_date: string;
 };
 
 type HabitStats = {
@@ -29,6 +28,10 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -37,15 +40,12 @@ export default function AnalyticsPage() {
       setError(null);
 
       try {
-        // 1) Load habits
         const { data: habitData, error: habitError } = await supabase
           .from("habits")
           .select("id, name, target_per_day")
           .eq("is_archived", false);
 
-        if (habitError) {
-          throw habitError;
-        }
+        if (habitError) throw habitError;
 
         const habitRows = (habitData ?? []) as HabitRow[];
         setHabits(habitRows);
@@ -57,12 +57,11 @@ export default function AnalyticsPage() {
           return;
         }
 
-        // 2) Load completions for last 30 days
         const today = new Date();
         const from = new Date();
         from.setDate(today.getDate() - 29);
 
-        const fromStr = from.toISOString().slice(0, 10); // YYYY-MM-DD
+        const fromStr = from.toISOString().slice(0, 10);
         const todayStr = today.toISOString().slice(0, 10);
 
         const { data: completionData, error: completionError } = await supabase
@@ -71,34 +70,27 @@ export default function AnalyticsPage() {
           .gte("completed_date", fromStr)
           .lte("completed_date", todayStr);
 
-        if (completionError) {
-          throw completionError;
-        }
+        if (completionError) throw completionError;
 
         const completionRows = (completionData ?? []) as CompletionRow[];
         setCompletions(completionRows);
 
-        // 3) Compute stats
-        const stats: HabitStats[] = habitRows.map((habit) => {
+        const computedStats: HabitStats[] = habitRows.map((habit) => {
           const habitCompletions = completionRows.filter(
             (c) => c.habit_id === habit.id,
           );
 
-          const totalCompletionsLast30Days = habitCompletions.length;
-
-          // compute streaks
-          const { currentStreak, longestStreak } =
-            computeStreaks(habitCompletions);
+          const { currentStreak, longestStreak } = computeStreaks(habitCompletions);
 
           return {
             habit,
-            totalCompletionsLast30Days,
+            totalCompletionsLast30Days: habitCompletions.length,
             currentStreak,
             longestStreak,
           };
         });
 
-        setStats(stats);
+        setStats(computedStats);
       } catch (err: any) {
         setError(err?.message || "Failed to load analytics");
       } finally {
@@ -109,22 +101,54 @@ export default function AnalyticsPage() {
     loadData();
   }, []);
 
+  async function handleGenerateInsights() {
+    setAiLoading(true);
+    setAiError(null);
+    setAiInsight(null);
+
+    try {
+      const res = await fetch("/api/insights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stats: stats.map((s) => ({
+            name: s.habit.name,
+            target_per_day: s.habit.target_per_day,
+            totalCompletionsLast30Days: s.totalCompletionsLast30Days,
+            currentStreak: s.currentStreak,
+            longestStreak: s.longestStreak,
+          })),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Insights request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      const text =
+        data.insight ?? data.text ?? data.message ?? JSON.stringify(data);
+
+      setAiInsight(text);
+    } catch (err: any) {
+      setAiError(err?.message || "Failed to generate insights");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Analytics</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">Analytics</h1>
         <p className="text-sm text-gray-400">
           Streaks and completions for the last 30 days.
         </p>
       </header>
 
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {loading && (
-        <p className="text-sm text-gray-400">Loading analytics…</p>
-      )}
+      {loading && <p className="text-sm text-gray-400">Loading analytics…</p>}
 
       {!loading && stats.length === 0 && (
         <p className="text-sm text-gray-400">
@@ -144,38 +168,66 @@ export default function AnalyticsPage() {
             <div className="text-xs text-gray-400">
               Target: {row.habit.target_per_day} / day
             </div>
-            <div className="text-xs text-gray-300 mt-2">
-              <span className="mr-4">
+            <div className="text-xs text-gray-300 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              <span>
                 Last 30 days:{" "}
                 <span className="font-semibold">
                   {row.totalCompletionsLast30Days}
                 </span>{" "}
                 completions
               </span>
-              <span className="mr-4">
+              <span>
                 Current streak:{" "}
-                <span className="font-semibold">
-                  {row.currentStreak} days
-                </span>
+                <span className="font-semibold">{row.currentStreak} days</span>
               </span>
               <span>
                 Longest streak:{" "}
-                <span className="font-semibold">
-                  {row.longestStreak} days
-                </span>
+                <span className="font-semibold">{row.longestStreak} days</span>
               </span>
             </div>
           </div>
         ))}
       </section>
+
+      {stats.length > 0 && (
+        <section className="border rounded px-4 py-4 bg-black/40 space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="text-sm font-semibold text-gray-100">
+              AI Insights
+            </h2>
+            <button
+              onClick={handleGenerateInsights}
+              disabled={aiLoading}
+              className={`px-3 py-1.5 rounded text-xs ${
+                aiLoading
+                  ? "bg-gray-700 text-gray-300 cursor-not-allowed opacity-70"
+                  : "bg-[#F43B47] text-white"
+              }`}
+            >
+              {aiLoading ? "Generating…" : "Generate AI insights"}
+            </button>
+          </div>
+
+          {aiError && <p className="text-sm text-red-500">{aiError}</p>}
+
+          {aiInsight && (
+            <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">
+              {aiInsight}
+            </p>
+          )}
+
+          {!aiInsight && !aiError && !aiLoading && (
+            <p className="text-xs text-gray-500">
+              Click the button to get an AI-generated summary of your
+              consistency and suggestions.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }
 
-/**
- * Compute current and longest streaks from completion rows.
- * Assumes completed_date in YYYY-MM-DD.
- */
 function computeStreaks(completions: CompletionRow[]): {
   currentStreak: number;
   longestStreak: number;
@@ -184,23 +236,16 @@ function computeStreaks(completions: CompletionRow[]): {
     return { currentStreak: 0, longestStreak: 0 };
   }
 
-  // sort dates ascending
-  const dates = completions
-    .map((c) => c.completed_date)
-    .sort();
-
-  // convert to Date objects
+  const dates = completions.map((c) => c.completed_date).sort();
   const dateObjs = dates.map((d) => new Date(d + "T00:00:00"));
 
   let longest = 1;
   let current = 1;
 
   for (let i = 1; i < dateObjs.length; i++) {
-    const prev = dateObjs[i - 1];
-    const curr = dateObjs[i];
-
-    const diffMs = curr.getTime() - prev.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    const diffDays =
+      (dateObjs[i].getTime() - dateObjs[i - 1].getTime()) /
+      (1000 * 60 * 60 * 24);
 
     if (diffDays === 1) {
       current += 1;
@@ -210,12 +255,10 @@ function computeStreaks(completions: CompletionRow[]): {
     }
   }
 
-  // current streak: check how many consecutive days up to today
   const today = new Date();
   let currentStreak = 0;
   let dayCursor = new Date(today);
-
-  const dateSet = new Set(dates); // YYYY-MM-DD strings
+  const dateSet = new Set(dates);
 
   while (true) {
     const key = dayCursor.toISOString().slice(0, 10);
@@ -224,8 +267,5 @@ function computeStreaks(completions: CompletionRow[]): {
     dayCursor.setDate(dayCursor.getDate() - 1);
   }
 
-  return {
-    currentStreak,
-    longestStreak: longest,
-  };
+  return { currentStreak, longestStreak: longest };
 }

@@ -25,6 +25,7 @@ export function SignUpForm({
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCheckEmail, setShowCheckEmail] = useState(false);
   const router = useRouter();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -44,11 +45,11 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
+      setShowCheckEmail(true);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -58,7 +59,7 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="bg-black/40 border-white/10">
         <CardHeader>
           <CardTitle className="text-2xl">Sign up</CardTitle>
           <CardDescription>Create a new account</CardDescription>
@@ -71,16 +72,14 @@ export function SignUpForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -90,9 +89,7 @@ export function SignUpForm({
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
+                <Label htmlFor="repeat-password">Repeat Password</Label>
                 <Input
                   id="repeat-password"
                   type="password"
@@ -115,6 +112,26 @@ export function SignUpForm({
           </form>
         </CardContent>
       </Card>
+
+      {showCheckEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="max-w-sm w-full rounded-lg border border-white/10 bg-neutral-900 p-6 space-y-4 text-center">
+            <div className="text-3xl">📩</div>
+            <h2 className="text-lg font-semibold text-white">Check your email</h2>
+            <p className="text-sm text-gray-300">
+              We sent a confirmation link to{" "}
+              <span className="font-medium">{email}</span>. Click the link to
+              activate your account, then come back and log in.
+            </p>
+            <Button
+              className="w-full bg-[#F43B47] hover:bg-[#d8323d]"
+              onClick={() => router.push("/auth/login")}
+            >
+              Got it, go to login
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

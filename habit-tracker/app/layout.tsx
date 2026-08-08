@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider>
           <Sidebar />
-          <main className="ml-52">
+          <main className="pt-16 md:pt-0 md:ml-52">
             {children}
           </main>
         </ThemeProvider>

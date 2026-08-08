@@ -24,11 +24,9 @@ export default function HabitsPage() {
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  // form state for creating
   const [name, setName] = useState("");
   const [targetPerDay, setTargetPerDay] = useState(1);
 
-  // inline edit state
   const [editName, setEditName] = useState<Record<string, string>>({});
   const [editTarget, setEditTarget] = useState<Record<string, number>>({});
   const [editColor, setEditColor] = useState<Record<string, string>>({});
@@ -52,7 +50,6 @@ export default function HabitsPage() {
         const list = data as Habit[];
         setHabits(list);
 
-        // initialise edit state
         const names: Record<string, string> = {};
         const targets: Record<string, number> = {};
         const colors: Record<string, string> = {};
@@ -216,8 +213,8 @@ export default function HabitsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Habits</h1>
+    <div className="p-4 sm:p-6 space-y-6">
+      <h1 className="text-xl sm:text-2xl font-semibold">Habits</h1>
 
       <form onSubmit={handleAddHabit} className="space-y-4 max-w-md">
         <div>
@@ -248,11 +245,7 @@ export default function HabitsPage() {
           Add habit
         </button>
 
-        {error && (
-          <p className="text-sm text-red-500 mt-2">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
       </form>
 
       {loading && (
@@ -260,9 +253,7 @@ export default function HabitsPage() {
       )}
 
       {!loading && habits.length === 0 && (
-        <p className="text-sm text-gray-400">
-          No habits yet. Add one above.
-        </p>
+        <p className="text-sm text-gray-400">No habits yet. Add one above.</p>
       )}
 
       <section className="space-y-3">
@@ -274,9 +265,9 @@ export default function HabitsPage() {
               key={habit.id}
               className="border rounded px-4 py-3 bg-black/40 space-y-2"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex-1 space-y-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 mt-1">
                     <span>Color:</span>
                     <div className="flex gap-1">
                       {COLOR_OPTIONS.map((c) => (
@@ -284,10 +275,7 @@ export default function HabitsPage() {
                           key={c}
                           type="button"
                           onClick={() =>
-                            setEditColor((prev) => ({
-                              ...prev,
-                              [habit.id]: c,
-                            }))
+                            setEditColor((prev) => ({ ...prev, [habit.id]: c }))
                           }
                           className={`w-4 h-4 rounded-full border ${
                             (editColor[habit.id] ?? habit.color) === c
@@ -298,12 +286,10 @@ export default function HabitsPage() {
                         />
                       ))}
                     </div>
-                    <span className="ml-3">Icon:</span>
+                    <span className="ml-1 sm:ml-3">Icon:</span>
                     <select
                       className="bg-black/40 rounded px-1 py-0.5 text-xs"
-                      value={
-                        editIcon[habit.id] ?? habit.icon ?? ICON_OPTIONS[0]
-                      }
+                      value={editIcon[habit.id] ?? habit.icon ?? ICON_OPTIONS[0]}
                       onChange={(e) =>
                         setEditIcon((prev) => ({
                           ...prev,
@@ -330,7 +316,7 @@ export default function HabitsPage() {
                     }
                   />
 
-                  <div className="text-xs text_gray-400">
+                  <div className="text-xs text-gray-400">
                     Target:{" "}
                     <input
                       type="number"
@@ -352,7 +338,7 @@ export default function HabitsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-row sm:flex-col gap-2 flex-wrap">
                   <button
                     onClick={() => handleSaveHabit(habit.id)}
                     disabled={isSaving}
@@ -368,7 +354,7 @@ export default function HabitsPage() {
                   <button
                     onClick={() => handleDeleteHabit(habit.id)}
                     disabled={isSaving}
-                    className="px-3 py-1 rounded text-xs bg-red-700 text_white"
+                    className="px-3 py-1 rounded text-xs bg-red-700 text-white"
                   >
                     Delete
                   </button>
@@ -380,7 +366,7 @@ export default function HabitsPage() {
                     disabled={isSaving}
                     className={`px-3 py-1 rounded text-xs ${
                       habit.is_archived
-                        ? "bg-gray-700 text_gray-200"
+                        ? "bg-gray-700 text-gray-200"
                         : "bg-indigo-700 text-white"
                     }`}
                   >
